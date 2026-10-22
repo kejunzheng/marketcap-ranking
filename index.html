@@ -68,7 +68,13 @@
   h1 { font-family: var(--serif); font-weight: 900; font-size: 34px; line-height: 1.18; letter-spacing: 1px; margin: 26px 0 12px; }
   .dek { margin: 0; font-size: 14px; line-height: 1.75; color: var(--ink-2); }
   .source { margin-top: 6px; font-size: 11px; color: var(--ink-3); }
-  .kpis { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr); border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); margin-top: 18px; }
+  .kpi-wrap { margin-top: 18px; }
+  .kpis { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr); border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
+  .kpi-scope { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-bottom: 6px; font-size: 12px; color: var(--ink-2); }
+  .kpi-scope[hidden] { display: none; }
+  .kpi-scope b { color: var(--accent); font-weight: 700; }
+  .kpi-scope span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kpi-scope button { flex-shrink: 0; color: var(--accent); font-size: 12px; }
   .kpi { padding: 12px 10px; min-width: 0; }
   .kpi + .kpi { border-left: 1px solid var(--hair); }
   .kpi:first-child { padding-left: 0; }
@@ -76,7 +82,7 @@
   .kpi .kv { font-size: 17px; font-weight: 700; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi .kv.name { font-family: var(--serif); font-size: 15px; }
   .kpi .s { font-size: 13px; font-weight: 600; white-space: nowrap; }
-  .kpi-link { display: block; width: 100%; text-align: left; transition: background .15s; }
+  .kpi-link { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; width: 100%; text-align: left; transition: background .15s; }
   .kpi-link .go { margin-left: 4px; color: var(--ink-3, var(--ink-2)); }
   .kpi-link:hover { background: var(--accent-soft); }
   .kpi-link:hover .kv { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
@@ -284,7 +290,7 @@
     :root { --inset: 48px; }
     .mast { display: grid; grid-template-columns: minmax(0, 1fr) minmax(420px, 560px); column-gap: 48px; align-items: end; }
     .mast .mast-top { grid-column: 1 / -1; }
-    .mast .kpis { margin-top: 0; }
+    .mast .kpi-wrap { margin-top: 0; }
     .kpi .kv { font-size: 22px; } .kpi .kv.name { font-size: 18px; }
     h1 { font-size: 56px; margin-top: 30px; }
     .chips, .chips.text { flex-wrap: wrap; overflow: visible; }
@@ -320,10 +326,13 @@
     <div class="mast-l"><h1>全球上市公司<br class="m-br">市值榜</h1>
     <p class="dek">全球主要上市公司总市值排名</p>
     <div class="source">数据更新时间：A股/港股 16:30、美股 06:30 每日收盘后更新</div></div>
+    <div class="kpi-wrap">
+    <div class="kpi-scope" id="kpiScope" hidden><span>按当前筛选统计：<b id="kpiScopeText"></b></span><button type="button" id="kpiReset">查看全部 ›</button></div>
     <div class="kpis">
       <div class="kpi"><div class="k">榜单总市值</div><div class="kv num" id="kpi1"></div></div>
       <button type="button" class="kpi kpi-link" id="kpi2b" aria-label="查看万亿美元俱乐部名单"><div class="k">万亿美元俱乐部<span class="go" aria-hidden="true">›</span></div><div class="kv num" id="kpi2"></div></button>
       <button type="button" class="kpi kpi-link" id="kpi3b" aria-label="查看今日领涨公司详情"><div class="k">今日领涨<span class="go" aria-hidden="true">›</span></div><div class="kv name" id="kpi3"></div><div class="s num" id="kpi3s"></div></button>
+    </div>
     </div>
   </header>
 
@@ -670,6 +679,10 @@
 
   // 概览跟随地区/行业/搜索筛选，与排序指标无关
   function renderKpis(list) {
+    var sc = [state.region !== '全部' ? state.region : '', state.industry !== '全部' ? state.industry : '',
+      state.q.trim() ? '搜索“' + state.q.trim() + '”' : ''].filter(Boolean).join(' · ');
+    document.getElementById('kpiScope').hidden = !sc;
+    document.getElementById('kpiScopeText').textContent = sc;
     var total = list.reduce(function (s, c) { return s + c.cap; }, 0);
     document.getElementById('kpi1').textContent = list.length ? money(total) : '—';
     clubList = list.filter(function (c) { return c.cap >= 1000; }).sort(function (a, b) { return b.cap - a.cap; });
@@ -863,6 +876,15 @@
     document.body.style.overflow = 'hidden';
   }
   document.getElementById('kpi2b').addEventListener('click', openClub);
+  // 清除市场 / 行业 / 搜索筛选，回到全榜
+  document.getElementById('kpiReset').addEventListener('click', function () {
+    ['region', 'industry'].forEach(function (k) {
+      state[k] = '全部';
+      document.getElementById(k).querySelectorAll('.chip').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.v === '全部')); });
+    });
+    state.q = ''; document.getElementById('search').value = ''; state.shown = PAGE;
+    render();
+  });
   function closeSheet() {
     openCo = null; fromClub = false;
     $mask.classList.remove('show'); $sheet.classList.remove('show');
