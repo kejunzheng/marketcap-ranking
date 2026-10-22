@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no">
 <title>全球上市公司市值榜</title>
+<link rel="preload" href="fonts/mc-serif-900.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mc-serif-700.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  /* 报刊衬线字体：Noto Serif SC 子集（SIL OFL），保证 iOS/安卓等无宋体设备显示一致 */
+  @font-face { font-family: 'MC Serif'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/mc-serif-700.woff2') format('woff2'); }
+  @font-face { font-family: 'MC Serif'; font-style: normal; font-weight: 900; font-display: swap; src: url('fonts/mc-serif-900.woff2') format('woff2'); }
   /* 报刊编辑风格：暖白纸面、衬线标题、深红强调色；中国市场惯例红涨绿跌，并配 ▲▼ 与正负号 */
   :root {
     color-scheme: light;
@@ -23,8 +28,8 @@
     --up: #b3261e;
     --down: #1d7a43;
     --mask: rgba(20,18,14,0.45);
-    --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
-    --digits: Georgia, "Times New Roman", "Noto Serif SC", "Songti SC", serif;
+    --serif: "MC Serif", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+    --digits: Georgia, "Times New Roman", "MC Serif", "Noto Serif SC", "Songti SC", serif;
     --sans: system-ui, -apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
   }
   @media (prefers-color-scheme: dark) {
