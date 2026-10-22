@@ -71,6 +71,12 @@
   .kpi .kv { font-size: 17px; font-weight: 700; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi .kv.name { font-family: var(--serif); font-size: 15px; }
   .kpi .s { font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .kpi-link { display: block; width: 100%; text-align: left; transition: background .15s; }
+  .kpi-link .go { margin-left: 4px; color: var(--ink-3, var(--ink-2)); }
+  .kpi-link:hover { background: var(--accent-soft); }
+  .kpi-link:hover .kv { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  .kpi-link:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .kpi-link:disabled { cursor: default; }
 
   /* ---------- 检索与切换 ---------- */
   .tools { display: flex; align-items: center; gap: 12px; margin-top: 20px; }
@@ -301,7 +307,7 @@
     <div class="kpis">
       <div class="kpi"><div class="k">榜单总市值</div><div class="kv num" id="kpi1"></div></div>
       <div class="kpi"><div class="k">万亿美元俱乐部</div><div class="kv num" id="kpi2"></div></div>
-      <div class="kpi"><div class="k">今日领涨</div><div class="kv name" id="kpi3"></div><div class="s num" id="kpi3s"></div></div>
+      <button type="button" class="kpi kpi-link" id="kpi3b" aria-label="查看今日领涨公司详情"><div class="k">今日领涨<span class="go" aria-hidden="true">›</span></div><div class="kv name" id="kpi3"></div><div class="s num" id="kpi3s"></div></button>
     </div>
   </header>
 
@@ -649,6 +655,8 @@
     document.getElementById('kpi2').textContent = list.filter(function (c) { return c.cap >= 1000; }).length + ' 家';
     var top = list.slice().sort(function (a, b) { return b.change - a.change; })[0];
     document.getElementById('kpi3').textContent = top ? top.cn : '—';
+    var kb = document.getElementById('kpi3b');
+    if (top) { kb.dataset.t = top.id; kb.disabled = false; } else { delete kb.dataset.t; kb.disabled = true; }
     var p = pct(top ? top.change : null), s = document.getElementById('kpi3s');
     s.textContent = top ? p.text : ''; s.className = 's num ' + p.cls;
   }
@@ -724,6 +732,7 @@
   $rows.addEventListener('click', onPick);
   $hero.addEventListener('click', onPick);
   document.getElementById('side').addEventListener('click', onPick);
+  document.getElementById('kpi3b').addEventListener('click', onPick);
   function byId(id) { return DATA.filter(function (x) { return x.id === id; })[0]; }
 
   /* ======================== 详情浮层 ======================== */
