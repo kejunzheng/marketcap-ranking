@@ -846,8 +846,11 @@
       return '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y(t) + '" y2="' + y(t) + '" stroke="var(--hair)" stroke-width="1"/>' +
         '<text x="' + (W - padR + 6) + '" y="' + (y(t) + 4) + '" font-size="10" fill="var(--ink-3)">' + money(t) + '</text>';
     }).join('');
-    var xt = [0, Math.floor((data.length - 1) / 2), data.length - 1].map(function (i, j) {
-      var anchor = j === 0 ? 'start' : j === 2 ? 'end' : 'middle';
+    // 只有两个点时不画中间刻度，避免与起点标签重叠
+    var last = data.length - 1;
+    var ticks = last >= 2 ? [0, Math.floor(last / 2), last] : [0, last];
+    var xt = ticks.map(function (i) {
+      var anchor = i === 0 ? 'start' : i === last ? 'end' : 'middle';
       return '<text x="' + x(i) + '" y="' + (H - 6) + '" font-size="10" fill="var(--ink-3)" text-anchor="' + anchor + '">' + monthLabel(end, data.length - 1 - i) + '</text>';
     }).join('');
     var line = data.map(function (v, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1); }).join('');
