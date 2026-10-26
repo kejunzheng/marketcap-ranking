@@ -369,13 +369,9 @@
     .title-share .share-page { display: none; }
   }
   @media (max-width: 759px) {
-    .mast-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand share" "nav nav"; column-gap: 12px; row-gap: 4px; padding-top: 14px; }
-    .mast-top .brand { grid-area: brand; }
-    .mast-actions { display: contents; }
-    .mast-actions .share-page-desktop { grid-area: share; justify-self: end; }
-    .mast-actions .asof { display: none; }
-    .desktop-nav { grid-area: nav; height: 40px; }
-    .desktop-nav .active { height: 40px; }
+    .mast-top { display: flex; padding-top: 18px; border-bottom: 0; }
+    .mast-actions, .desktop-nav { display: none; }
+    .title-share .share-page { display: inline-flex; align-items: flex-start; padding-top: 12px; border: 0; border-radius: 0; }
     .source { font-size: 12px; line-height: 1.55; }
   }
   @media (min-width: 1200px) {
