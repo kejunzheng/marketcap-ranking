@@ -335,6 +335,17 @@
 
   .share-page:disabled { opacity: .35; cursor: default; }
 
+
+  /* 桌面端：概览卡始终位于搜索区上方，分享入口紧邻标题。 */
+  @media (min-width: 760px) {
+    .title-share { justify-content: flex-start; gap: 18px; }
+    .title-share h1 { flex: 0 1 auto; }
+  }
+  @media (min-width: 1000px) {
+    .mast { display: block; }
+    .mast .kpi-wrap { margin-top: 24px; }
+  }
+
 </style>
 </head>
 <body>
