@@ -1189,21 +1189,15 @@
   }
   window.addEventListener('resize', function () { if (openCo && openCo.hist.length >= 2) drawChart(openCo); });
 
-  /* ---------- 报头日期：手机显示最新收盘日，宽屏列出各市场实际日期 ---------- */
+  /* ---------- 报头日期：手机与宽屏统一显示快照中最新收盘日 ---------- */
   (function () {
     var md = SNAP.marketDates || {};
     var ds = [md.A, md.HK, md.US].filter(Boolean);
     var latest = ds.length ? ds.slice().sort().pop() : SNAP.quoteDates[SNAP.quoteDates.length - 1];
-    var cnDate = function (date) { var p = date.split('-'); return Number(p[1]) + '月' + Number(p[2]) + '日'; };
-    var shortText = '数据截至 ' + cnDate(latest) + '收盘';
-    var parts = [];
-    if (md.A && md.A === md.HK) parts.push('A股/港股 ' + cnDate(md.A));
-    else { if (md.A) parts.push('A股 ' + cnDate(md.A)); if (md.HK) parts.push('港股 ' + cnDate(md.HK)); }
-    if (md.US) parts.push('美股 ' + cnDate(md.US));
-    var detailText = ds.length && !ds.every(function (x) { return x === ds[0]; }) ? '数据截至 ' + parts.join(' · ') + '收盘' : shortText;
-    document.getElementById('asofDetail').textContent = detailText;
-    document.getElementById('asofShort').textContent = shortText;
-    document.getElementById('asof').setAttribute('aria-label', detailText);
+    var label = '数据截至' + latest;
+    document.getElementById('asofDetail').textContent = label;
+    document.getElementById('asofShort').textContent = label;
+    document.getElementById('asof').setAttribute('aria-label', label);
   })();
   document.getElementById('fxNote').textContent = '1 美元 = ' + SNAP.fx.USDCNY.toFixed(4) + ' 元人民币';
   document.getElementById('countNote').textContent = DATA.length;
