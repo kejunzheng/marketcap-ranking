@@ -148,6 +148,11 @@
   .bar i.down { background: var(--down); } .bar i.up { background: var(--up); }
   .more { display: block; width: 100%; height: 48px; margin-top: 12px; border: 1px solid var(--ink-1); border-radius: 3px; font-size: 14px; font-weight: 600; }
   .empty { padding: 48px 0; text-align: center; color: var(--ink-3); }
+  .search-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; padding: 14px 0; font-size: 12px; color: var(--ink-2); }
+  .search-summary button { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  .search-note { flex-basis: 100%; margin: 0; color: var(--ink-3); line-height: 1.6; }
+  .is-searching .hero .big-n { font-size: 42px; }
+  @media (min-width: 1280px) { .layout.is-searching { grid-template-columns: minmax(0, 1fr); } }
 
   /* ---------- 说明 ---------- */
   .notes { margin-top: 32px; font-size: 12px; color: var(--ink-2); }
@@ -353,9 +358,14 @@
   </div>
 
   <section aria-label="榜单">
+    <div class="search-summary" id="searchSummary" hidden>
+      <span id="searchSummaryText" role="status" aria-live="polite" aria-atomic="true"></span>
+      <button type="button" id="clearSearchFilters" hidden>清除筛选</button>
+      <p class="search-note" id="searchNote"></p>
+    </div>
     <div id="hero"></div>
     <div class="list-head m"><span class="hl" id="headL">按总市值从高到低</span><span class="hm">近30日市值<br>市盈率</span><span class="hr" id="headR">总市值 / 今日</span></div>
-    <div class="list-head pc" aria-hidden="true"><span>排名</span><span>公司</span><span id="hpMain">总市值</span><span id="hpChg">今日</span><span>近30日市值</span><span>市盈率</span><span class="price">股价</span></div>
+    <div class="list-head pc" aria-hidden="true"><span id="hpRank">排名</span><span>公司</span><span id="hpMain">总市值</span><span id="hpChg">今日</span><span>近30日市值</span><span>市盈率</span><span class="price">股价</span></div>
     <div id="rows"></div>
     <button class="more" id="more" type="button">加载更多</button>
   </section>
@@ -497,6 +507,7 @@
   function dyFmt(v) { return v > 0 ? v.toFixed(2) + '%' : '未分红'; }
   function metricText(c, key) {
     var v = val(c, key);
+    if (v == null || !isFinite(v)) return '—';
     switch (key) {
       case 'pe': case 'pb': case 'ps': return ratio(v);
       case 'margin': return v != null ? v.toFixed(1) + '%' : '—';
@@ -526,24 +537,26 @@
     return '其他';
   }
   function inRegion(c, region) { return region === '全部' || c.market === region; }
-  function scope() {
+  function matchesQuery(c) {
     var q = state.q.trim().toLowerCase();
+    return !q || (c.cn + ' ' + c.ticker + ' ' + c.id).toLowerCase().indexOf(q) >= 0;
+  }
+  function scope() {
     return DATA.filter(function (c) {
-      if (!inRegion(c, state.region)) return false;
-      if (state.industry !== '全部' && c.industry !== state.industry) return false;
-      if (q && (c.cn + ' ' + c.ticker + ' ' + c.id).toLowerCase().indexOf(q) < 0) return false;
-      return true;
+      return inRegion(c, state.region) && (state.industry === '全部' || c.industry === state.industry) && matchesQuery(c);
     });
   }
+  function validMetric(c, m) {
+    var v = val(c, m.key);
+    return v != null && isFinite(v) && (!m.asc || v > 0);
+  }
   function filtered(base) {
-    var m = metricDef(state.metric);
-    var list = base.filter(function (c) {
-      var v = val(c, m.key);
-      if (v == null || !isFinite(v)) return false;
-      if (m.asc && v <= 0) return false;      // 估值倍数：剔除亏损/无效
-      return true;
-    });
+    var m = metricDef(state.metric), searching = !!state.q.trim();
+    var list = base.filter(function (c) { return searching || validMetric(c, m); });
     list.sort(function (a, b) {
+      var av = validMetric(a, m), bv = validMetric(b, m);
+      if (av !== bv) return av ? -1 : 1;
+      if (!av) return b.cap - a.cap;
       var d = val(a, m.key) - val(b, m.key);
       return (m.asc ? d : -d) || b.cap - a.cap;
     });
@@ -557,10 +570,10 @@
   function barScale(list, k) {
     var signed = k === 'growth' || k === 'rankchg';
     var max = 0;
-    list.forEach(function (c) { var v = val(c, k); max = Math.max(max, signed ? Math.abs(v) : v); });
+    list.forEach(function (c) { if (!validMetric(c, metricDef(k))) return; var v = val(c, k); max = Math.max(max, signed ? Math.abs(v) : v); });
     return function (c) {
       var v = val(c, k);
-      var w = max > 0 ? Math.max(0, signed ? Math.abs(v) : v) / max * 100 : 0;
+      var w = max > 0 && validMetric(c, metricDef(k)) ? Math.max(0, signed ? Math.abs(v) : v) / max * 100 : 0;
       var cls = signed ? metricCls(c, k) : '';
       return '<div class="bar" aria-hidden="true"><i class="' + cls + '" style="width:' + w.toFixed(1) + '%"></i></div>';
     };
@@ -583,19 +596,38 @@
   function render() {
     var base = scope();
     var current = filtered(base);
-    var k = state.metric, mdef = metricDef(k);
+    var k = state.metric, mdef = metricDef(k), searching = !!state.q.trim();
     var colName = k === 'growth' ? periodLabel() + '涨幅' : mdef.col;
     document.getElementById('headL').textContent = k === 'growth' ? '按' + periodLabel() + '市值涨幅从高到低' : mdef.order;
     document.getElementById('headR').textContent = k === 'cap' ? '总市值 / 今日' : colName + ' / 总市值';
     document.getElementById('hpMain').textContent = k === 'cap' ? '总市值' : colName;
     document.getElementById('hpChg').textContent = k === 'cap' ? '今日' : '总市值';
-    renderSide(base);
+    document.querySelector('.layout').classList.toggle('is-searching', searching);
+    document.getElementById('side').hidden = searching;
+    document.getElementById('hpRank').textContent = searching ? '全球市值排名' : '排名';
+    document.getElementById('searchSummary').hidden = !searching;
+    var hasFilters = state.region !== '全部' || state.industry !== '全部';
+    document.getElementById('clearSearchFilters').hidden = !hasFilters;
+    if (searching) {
+      document.getElementById('searchSummaryText').textContent = '找到 ' + base.length + ' 家公司 · 当前范围：' +
+        (state.region === '全部' ? '全部市场' : state.region) + ' / ' + (state.industry === '全部' ? '全部行业' : state.industry);
+      var missing = base.filter(function (c) { return !validMetric(c, mdef); }).length;
+      document.getElementById('searchNote').textContent = '仅搜索本榜单收录公司（总市值 ≥ 100 亿美元）。' +
+        (missing ? '其中 ' + missing + ' 家无可比' + colName + '，仍保留显示并排在末尾。' : '') + '排名为全球市值排名。';
+    }
+    if (!searching) renderSide(base);
     document.getElementById('period').hidden = k !== 'growth';
     renderKpis(base);
 
     if (!current.length) {
       $hero.innerHTML = '';
-      $rows.innerHTML = '<div class="empty">没有符合条件的公司，换个筛选条件试试</div>';
+      var emptyText = '没有符合条件的公司，换个筛选条件试试';
+      if (searching) {
+        var totalMatches = DATA.filter(matchesQuery).length;
+        emptyText = totalMatches && hasFilters ? '当前筛选范围内没有匹配公司，可点击“清除筛选”扩大搜索范围。' :
+          '当前收录范围内未找到“' + state.q.trim() + '”，可尝试公司名称或完整代码。';
+      }
+      $rows.innerHTML = '<div class="empty">' + esc(emptyText) + '</div>';
       $more.style.display = 'none';
       return;
     }
@@ -616,8 +648,8 @@
     var heroCls = metricCls(top, k);
     $hero.innerHTML =
       '<button type="button" class="hero" data-t="' + esc(top.id) + '">' +
-        '<div class="big-n">1</div>' +
-        '<div><div class="eyebrow">' + esc(k === 'growth' ? periodLabel() + '涨幅' : mdef.label) + '排名 · 第一名</div>' +
+        '<div class="big-n">' + (searching ? top.globalRank : 1) + '</div>' +
+        '<div><div class="eyebrow">' + (searching ? '全球市值第 ' + top.globalRank + ' 名' : esc(k === 'growth' ? periodLabel() + '涨幅' : mdef.label) + '排名 · 第一名') + '</div>' +
           '<div class="name">' + esc(top.cn) + '</div><div class="sub">' + subLine(top) + '</div></div>' +
         trendCell(top, 72, 24) +
         '<div class="vrow"><span class="val num' + (heroCls ? ' ' + heroCls : '') + '">' + metricText(top, k) + '</span>' +
@@ -625,10 +657,10 @@
       '</button>';
 
     $rows.innerHTML = current.slice(1, state.shown).map(function (c, j) {
-      var rank = j + 2, d = '';
+      var rank = searching ? c.globalRank : j + 2, d = '';
       if (prevPos) { var dd = delta(prevPos[c.id] - rank); d = '<span class="d ' + dd.cls + '">' + dd.text + '</span>'; }
       var mainTxt = metricText(c, k), mainCls = metricCls(c, k);
-      return '<button type="button" class="item" data-t="' + esc(c.id) + '" aria-label="' + esc(c.cn + '，第' + rank + '名，' + colName + ' ' + mainTxt) + '">' +
+      return '<button type="button" class="item" data-t="' + esc(c.id) + '" aria-label="' + esc(c.cn + (searching ? '，全球市值第' : '，第') + rank + '名，' + colName + ' ' + mainTxt) + '">' +
         '<div class="rank"><span class="n num">' + rank + '</span>' + d + '</div>' +
         '<div class="co"><div class="name">' + esc(c.cn) + '</div><div class="sub">' + subLine(c) + '</div></div>' +
         trendCell(c, 56, 20) +
@@ -872,6 +904,15 @@
   }
   document.getElementById('kpi2b').addEventListener('click', openClub);
   // 清除市场 / 行业 / 搜索筛选，回到全榜
+  function resetSearchFilters() {
+    ['region', 'industry'].forEach(function (k) {
+      state[k] = '全部';
+      document.getElementById(k).querySelectorAll('.chip').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.v === '全部')); });
+    });
+    state.shown = PAGE;
+    render();
+  }
+  document.getElementById('clearSearchFilters').addEventListener('click', resetSearchFilters);
   document.getElementById('kpiReset').addEventListener('click', function () {
     ['region', 'industry'].forEach(function (k) {
       state[k] = '全部';
