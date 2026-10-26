@@ -1281,7 +1281,6 @@
     text(sourceLine, 44, footerTop + 29, sourceFont + 'px ' + sans, '#777269');
     text('扫码查看完整榜单', 44, footerTop + 94, '700 23px ' + serif);
     text('更多公司与指标，持续更新', 44, footerTop + 124, '16px ' + sans, '#777269');
-    text('腾讯财经 × 观市', 44, footerTop + 166, '15px ' + sans, muted);
     var matrix = SHARE_QR_MATRIX, cell = 3, qrSize = matrix.length * cell, qrX = 676 - qrSize, qrY = footerTop + 54;
     ctx.fillStyle = '#ffffff'; ctx.fillRect(qrX, qrY, qrSize, qrSize);
     ctx.fillStyle = ink;
@@ -1337,7 +1336,7 @@
     try {
       var info = api.setShareInfo({
         title: '全球上市公司市值榜',
-        longTitle: '全球上市公司市值榜 · 腾讯财经 × 观市',
+        longTitle: '全球上市公司市值榜',
         content: '查看全球主要上市公司总市值排名，了解市场变化。',
         url: shareUrl,
         articleUrl: shareUrl
