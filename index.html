@@ -360,6 +360,23 @@
   .desktop-nav, .desktop-side, .capbar-head, .dek-desktop, .share-page-desktop { display: none; }
   .mast-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
   .mast-actions .asof { margin-left: 0; }
+  /* 手机与平板也展示当前栏目；窄屏将栏目和日期排在第二行。 */
+  @media (max-width: 1199px) {
+    .mast-top { border-bottom: 1px solid var(--ink-2); }
+    .desktop-nav { display: flex; align-self: stretch; color: var(--ink-2); font-size: 13px; white-space: nowrap; }
+    .desktop-nav .active { display: flex; align-items: center; color: var(--ink-1); font-weight: 700; border-bottom: 2px solid var(--accent); }
+    .share-page-desktop { display: inline-flex; align-items: center; width: 32px; height: 32px; flex: 0 0 32px; padding: 0; border: 1px solid var(--hair); border-radius: 50%; }
+    .title-share .share-page { display: none; }
+  }
+  @media (max-width: 759px) {
+    .mast-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand share" "nav date"; column-gap: 12px; row-gap: 4px; padding-top: 14px; }
+    .mast-top .brand { grid-area: brand; }
+    .mast-actions { display: contents; }
+    .mast-actions .share-page-desktop { grid-area: share; justify-self: end; }
+    .mast-actions .asof { grid-area: date; margin-left: 0; text-align: right; white-space: nowrap; }
+    .desktop-nav { grid-area: nav; height: 40px; }
+    .desktop-nav .active { height: 40px; }
+  }
   @media (min-width: 1200px) {
     :root { --inset: 48px; }
     .wrap { max-width: 1280px; }
