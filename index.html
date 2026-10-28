@@ -1032,13 +1032,7 @@
       '<div class="peers">' + peers.map(function (x) {
         return '<button type="button" data-t="' + esc(x.id) + '" class="' + (x === c ? 'cur' : '') + '"><span><span class="pr num">' +
           rankWithin(x, function (y) { return y.industry === c.industry; }) + '</span><span class="pn">' + esc(x.cn) + '</span></span><span class="num">' + money(x.cap) + '</span></button>';
-      }).join('') + '</div>' +
-
-      '<div class="section-title"><span>相关报道</span></div>' +
-      '<div class="news">' +
-        '<a href="javascript:void(0)">【占位】' + esc(c.cn) + '相关报道将接入本站稿件<span>本站产经频道 · 待对接</span></a>' +
-        '<a href="javascript:void(0)">【占位】' + esc(c.industry) + '赛道市值格局观察<span>本站数据新闻 · 待对接</span></a>' +
-      '</div>';
+      }).join('') + '</div>';
 
     if (c.hist.length >= 2) drawChart(c); else document.getElementById('chart').innerHTML = '<div class="empty" style="padding:24px 0">上市时间较短，暂无走势数据</div>';
     document.getElementById('close').onclick = closeSheet;
